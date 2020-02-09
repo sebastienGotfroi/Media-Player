@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Media Player</string>
+
+    <string name="songs">Morceaux</string>
+    <string name="singers">Artistes</string>
+    <string name="types">Genres</string>
+    <string name="playlsit">Playlist</string>
 </resources>

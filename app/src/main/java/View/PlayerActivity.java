@@ -1,20 +1,12 @@
 package View;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
 import android.Manifest;
-import android.content.ContentResolver;
-import android.content.Context;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -26,17 +18,17 @@ import com.sebaroundtheworld.mediaplayer.Model.Song;
 import com.sebaroundtheworld.mediaplayer.R;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import Service.MusicService;
 import Service.PermissionService;
+import Service.ShuffleService;
 import Utils.Constants;
 
-public class MainActivity extends AppCompatActivity {
+public class PlayerActivity extends AppCompatActivity {
 
     private MusicService musicService;
+    private ShuffleService shuffleService;
 
     private MediaPlayer mediaPlayer;
 
@@ -55,20 +47,19 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         musicService = new MusicService(this);
+        shuffleService = new ShuffleService();
         mediaPlayer = new MediaPlayer();
         addEndListener(mediaPlayer);
 
         initWidgets();
         initDurationSeekBar(mediaPlayer, durationSB);
 
-        currentIndex = 0;
+        songList = getIntent().getExtras().getParcelableArrayList(Constants.INTENT_KEY_LIST_SONG);
 
-        if (PermissionService.hasPermission(Manifest.permission.READ_EXTERNAL_STORAGE,
-                Constants.MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE, this)) {
+        currentIndex = getIntent().getExtras().getInt(Constants.INTENT_KEY_INDEX_SONG);
 
-            songList = musicService.getMusics();
-            prepareMusic();
-        }
+        prepareMusic();
+        playMusic(playButton);
     }
 
     @Override
@@ -112,9 +103,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void forward (View v) {
+
         currentIndex++;
-        prepareMusic();
-        playMusic(playButton);
+
+        if(songList.size() <= currentIndex) {
+            playButton.setText("Play");
+            currentIndex = 0;
+            prepareMusic();
+        } else {
+            prepareMusic();
+            playMusic(playButton);
+        }
     }
 
     public void repeat (View v) {
@@ -123,17 +122,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void shuffle (View v) {
-        Log.i("Number of Song", songList.size() +"");
+
+        List<Song> prioritySong;
+
         Song currentSong = songList.get(currentIndex);
 
         songList.remove(currentIndex);
-        Collections.shuffle(songList);
 
-        Song firstSong = songList.get(0);
-        songList.add(firstSong);
+        prioritySong = musicService.getRecentsSongs(20);
+        songList.removeAll(prioritySong);
 
-        songList.set(0, currentSong);
-        Log.i("Number of Song", songList.size() +"");
+        songList = shuffleService.shuffleWithPriority(prioritySong, songList, 80);
+
+        songList.add(0, currentSong);
+        currentIndex = 0;
     }
 
     private void prepareMusic() {
@@ -159,13 +161,7 @@ public class MainActivity extends AppCompatActivity {
         mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
             public void onCompletion(MediaPlayer mp) {
-
-                if(songList.size() < currentIndex) {
-                    playButton.setText("Play");
-                    currentIndex = 0;
-                } else {
-                    forward(null);
-                }
+                forward(null);
             }
         });
     }
@@ -173,7 +169,7 @@ public class MainActivity extends AppCompatActivity {
     private void initDurationSeekBar(final MediaPlayer mediaPlayer, final SeekBar seekBar){
 
         final Handler handler = new Handler();
-        MainActivity.this.runOnUiThread(new Runnable() {
+        PlayerActivity.this.runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 seekBar.setProgress(mediaPlayer.getCurrentPosition());
