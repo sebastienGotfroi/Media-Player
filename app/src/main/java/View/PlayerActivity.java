@@ -10,11 +10,11 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.view.View;
 import android.widget.Button;
+import android.widget.MediaController;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.sebaroundtheworld.mediaplayer.Model.Song;
-import com.sebaroundtheworld.mediaplayer.Service.MusicService.MusicBinder;
 import com.sebaroundtheworld.mediaplayer.R;
 
 import java.util.List;
@@ -24,32 +24,31 @@ import com.sebaroundtheworld.mediaplayer.Service.MusicService;
 import com.sebaroundtheworld.mediaplayer.Service.ShuffleService;
 import com.sebaroundtheworld.mediaplayer.Utils.Constants;
 
-public class PlayerActivity extends AppCompatActivity {
+public class PlayerActivity extends AppCompatActivity implements MediaController.MediaPlayerControl {
 
     private MusicService musicService;
     private ShuffleService shuffleService;
     private MusicRepository musicRepository;
 
-    private Button playButton;
     private TextView singerTV;
     private TextView titleTV;
-    private SeekBar durationSB;
+    private MusicController musicController;
 
     private List<Song> songList;
     private int currentIndex;
 
     private Intent playIntent;
     private boolean musicBound = false;
+    private boolean pause = false;
 
     private ServiceConnection musicConnection = new ServiceConnection(){
 
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             MusicService.MusicBinder binder = (MusicService.MusicBinder)service;
-            //get service
+
             musicService = binder.getService();
-            musicService.setSong(currentIndex);
-            musicService.playSong();
+            start();
             musicBound = true;
         }
 
@@ -84,27 +83,57 @@ public class PlayerActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if(pause) {
+            musicController.show(0);
+            pause = false;
+        }
+
+    }
+
+    @Override
+    protected void onPause() {
+        pause = true;
+        super.onPause();
+    }
+
+    @Override
+    protected void onStop() {
+        musicController.hide();
+        super.onStop();
+    }
+
      @Override
      protected void onDestroy(){
         unbindService(musicConnection);
         super.onDestroy();
      }
 
-    public void playMusic (View v) {
-        musicService.setSong(currentIndex);
-        musicService.playSong();
-    }
+    private void setMusicController() {
+        musicController = new MusicController(this);
 
-    public void backward (View v) {
+        musicController.setMediaPlayer(this);
+        musicController.setEnabled(true);
+        musicController.setAnchorView(findViewById(R.id.playerActivityControllerView));
 
-    }
-
-    public void forward (View v) {
-
-    }
-
-    public void repeat (View v) {
-
+        musicController.setPrevNextListeners(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                currentIndex = musicService.next();
+                musicController.show();
+                fillMetadata();
+            }
+        }, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                currentIndex = musicService.prev();
+                musicController.show(0);
+                fillMetadata();
+            }
+        });
     }
 
     public void shuffle (View v) {
@@ -124,40 +153,78 @@ public class PlayerActivity extends AppCompatActivity {
         currentIndex = 0;
     }
 
+    @Override
+    public void start() {
+        musicService.setSong(currentIndex);
+        musicService.playSong();
+        fillMetadata();
+        musicController.show(0);
+    }
 
-   /** private void initDurationSeekBar(final MediaPlayer mediaPlayer, final SeekBar seekBar){
+    @Override
+    public void pause() {
+        musicService.pause();
+    }
 
-        final Handler handler = new Handler();
-        PlayerActivity.this.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                seekBar.setProgress(mediaPlayer.getCurrentPosition());
-                handler.postDelayed(this, 1000);
-            }
-        });
+    @Override
+    public int getDuration() {
+        if (musicService != null && musicService.isPlaying()) {
+            return musicService.getDuration();
+        }
+        return 0;
+    }
 
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if(fromUser) {
-                    mediaPlayer.seekTo(progress);
-                }
-            }
+    @Override
+    public int getCurrentPosition() {
+        if (musicService != null && musicService.isPlaying()) {
+            return musicService.getCurrentPosition();
+        }
+        return 0;
+    }
 
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-            }
+    @Override
+    public void seekTo(int pos) {
+        musicService.seekTo(pos);
+    }
 
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-            }
-        });
-    }*/
+    @Override
+    public boolean isPlaying() {
+        return musicService.isPlaying();
+    }
+
+    @Override
+    public int getBufferPercentage() {
+        return 0;
+    }
+
+    @Override
+    public boolean canPause() {
+        return true;
+    }
+
+    @Override
+    public boolean canSeekBackward() {
+        return true;
+    }
+
+    @Override
+    public boolean canSeekForward() {
+        return true;
+    }
+
+    @Override
+    public int getAudioSessionId() {
+        return 0;
+    }
+
+    private void fillMetadata() {
+        singerTV.setText(songList.get(currentIndex).getArtist());
+        titleTV.setText(songList.get(currentIndex).getTitle());
+    }
 
     private void initWidgets() {
-        playButton = (Button) findViewById(R.id.playButton);
         singerTV = (TextView) findViewById(R.id.singerTV);
         titleTV = (TextView) findViewById(R.id.titleTV);
-        durationSB = (SeekBar) findViewById(R.id.duration);
+        setMusicController();
     }
 }
