@@ -1,9 +1,13 @@
 package View;
 
 import android.Manifest;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.view.Menu;
 import android.view.View;
 import android.widget.AdapterView;
@@ -12,43 +16,82 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.view.menu.MenuView.ItemView;
 import androidx.appcompat.widget.Toolbar;
 
 import com.sebaroundtheworld.mediaplayer.Model.Song;
 import com.sebaroundtheworld.mediaplayer.R;
 
 import java.util.ArrayList;
-import java.util.List;
 
-import Service.MusicService;
-import Service.PermissionService;
-import Utils.Constants;
+import com.sebaroundtheworld.mediaplayer.Repository.MusicRepository;
+import com.sebaroundtheworld.mediaplayer.Service.MusicService;
+import com.sebaroundtheworld.mediaplayer.Service.PermissionService;
+import com.sebaroundtheworld.mediaplayer.Utils.Constants;
 
 public class SearchActivity extends AppCompatActivity {
 
     private Toolbar searchMenu;
     private ListView musicListView;
 
+    private MusicRepository musicRepository;
     private MusicService musicService;
 
     private ArrayList<Song> listSong;
+    private ArrayAdapter<Song> musicAdapter;
+
+    private Intent playIntent;
+
+    private ServiceConnection musicConnection = new ServiceConnection(){
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            MusicService.MusicBinder binder = (MusicService.MusicBinder)service;
+            //get service
+            musicService = binder.getService();
+            musicService.setList(listSong);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+        }
+    };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
 
-        musicService = new MusicService(this);
+        listSong = new ArrayList<>();
+
+        musicRepository = new MusicRepository(this);
 
         if (PermissionService.hasPermission(Manifest.permission.READ_EXTERNAL_STORAGE,
                 Constants.MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE, this)) {
 
-            listSong = (ArrayList) musicService.getMusics();
-            initWidget();
+            listSong.addAll((ArrayList) musicRepository.getMusics());
         }
 
+        initWidget();
         initSearchMenu();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if(playIntent==null) {
+            playIntent = new Intent(this, MusicService.class);
+
+            if (!bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE)){
+                startService(playIntent);
+            }
+            bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        unbindService(musicConnection);
+        super.onDestroy();
     }
 
     @Override
@@ -64,7 +107,8 @@ public class SearchActivity extends AppCompatActivity {
             case Constants.MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE: {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    listSong = (ArrayList<Song>) musicService.getMusics();
+                    listSong.addAll((ArrayList<Song>) musicRepository.getMusics());
+                    musicAdapter.notifyDataSetChanged();
                 } else {
                     Toast.makeText(this, "No autorised to get the musics", Toast.LENGTH_SHORT).show();
                 }
@@ -81,7 +125,7 @@ public class SearchActivity extends AppCompatActivity {
     private void initWidget() {
         musicListView = (ListView) findViewById(R.id.musicListView);
 
-        ArrayAdapter<Song> musicAdapter = new ArrayAdapter<>(this, R.layout.support_simple_spinner_dropdown_item, listSong);
+        musicAdapter = new ArrayAdapter<>(this, R.layout.support_simple_spinner_dropdown_item, listSong);
         musicListView.setAdapter(musicAdapter);
 
         musicListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
