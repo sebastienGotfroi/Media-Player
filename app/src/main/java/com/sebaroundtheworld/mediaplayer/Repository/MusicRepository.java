@@ -1,9 +1,8 @@
-package Service;
+package com.sebaroundtheworld.mediaplayer.Repository;
 
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
-import android.media.AudioManager;
 import android.net.Uri;
 import android.provider.MediaStore;
 
@@ -12,14 +11,12 @@ import com.sebaroundtheworld.mediaplayer.Model.Song;
 import java.util.ArrayList;
 import java.util.List;
 
-public  class MusicService {
+public class MusicRepository {
 
-    private AudioManager audioManager;
     private ContentResolver contentResolver;
     private Uri externalUri;
 
-    public MusicService(Context context) {
-        audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+    public MusicRepository (Context context) {
         contentResolver = context.getContentResolver();
         externalUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
     }
@@ -63,5 +60,4 @@ public  class MusicService {
 
         return songList;
     }
-
 }

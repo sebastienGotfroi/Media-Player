@@ -1,6 +1,4 @@
-package Service;
-
-import android.util.Log;
+package com.sebaroundtheworld.mediaplayer.Service;
 
 import com.sebaroundtheworld.mediaplayer.Model.Song;
 

@@ -2,35 +2,33 @@ package View;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
-import android.media.MediaPlayer;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.Handler;
-import android.util.Log;
+import android.os.IBinder;
 import android.view.View;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.sebaroundtheworld.mediaplayer.Model.Song;
+import com.sebaroundtheworld.mediaplayer.Service.MusicService.MusicBinder;
 import com.sebaroundtheworld.mediaplayer.R;
 
-import java.io.IOException;
 import java.util.List;
 
-import Service.MusicService;
-import Service.PermissionService;
-import Service.ShuffleService;
-import Utils.Constants;
+import com.sebaroundtheworld.mediaplayer.Repository.MusicRepository;
+import com.sebaroundtheworld.mediaplayer.Service.MusicService;
+import com.sebaroundtheworld.mediaplayer.Service.ShuffleService;
+import com.sebaroundtheworld.mediaplayer.Utils.Constants;
 
 public class PlayerActivity extends AppCompatActivity {
 
     private MusicService musicService;
     private ShuffleService shuffleService;
-
-    private MediaPlayer mediaPlayer;
+    private MusicRepository musicRepository;
 
     private Button playButton;
     private TextView singerTV;
@@ -40,85 +38,73 @@ public class PlayerActivity extends AppCompatActivity {
     private List<Song> songList;
     private int currentIndex;
 
+    private Intent playIntent;
+    private boolean musicBound = false;
+
+    private ServiceConnection musicConnection = new ServiceConnection(){
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            MusicService.MusicBinder binder = (MusicService.MusicBinder)service;
+            //get service
+            musicService = binder.getService();
+            musicService.setSong(currentIndex);
+            musicService.playSong();
+            musicBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            musicBound = false;
+        }
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        musicService = new MusicService(this);
         shuffleService = new ShuffleService();
-        mediaPlayer = new MediaPlayer();
-        addEndListener(mediaPlayer);
+        musicRepository = new MusicRepository(this);
 
         initWidgets();
-        initDurationSeekBar(mediaPlayer, durationSB);
 
         songList = getIntent().getExtras().getParcelableArrayList(Constants.INTENT_KEY_LIST_SONG);
 
         currentIndex = getIntent().getExtras().getInt(Constants.INTENT_KEY_INDEX_SONG);
-
-        prepareMusic();
-        playMusic(playButton);
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        switch (requestCode) {
-            case Constants.MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE: {
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    songList = musicService.getMusics();
-                    prepareMusic();
-                } else {
-                    Toast.makeText(this, "No autorised to get the musics", Toast.LENGTH_SHORT).show();
-                }
-                return;
-            }
+    protected void onStart() {
+        super.onStart();
+        if(playIntent==null){
+            playIntent = new Intent(this, MusicService.class);
+            bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
         }
     }
 
-    public void playMusic (View v) {
+     @Override
+     protected void onDestroy(){
+        unbindService(musicConnection);
+        super.onDestroy();
+     }
 
-        if(mediaPlayer.isPlaying()) {
-            mediaPlayer.pause();
-            playButton.setText("Play");
-        } else {
-            mediaPlayer.start();
-            playButton.setText("Pause");
-        }
+    public void playMusic (View v) {
+        musicService.setSong(currentIndex);
+        musicService.playSong();
     }
 
     public void backward (View v) {
 
-        Log.i("Info", mediaPlayer.getCurrentPosition() +"");
-
-        if (mediaPlayer.getCurrentPosition() > 1000) {
-            mediaPlayer.seekTo(0);
-        } else {
-            currentIndex = currentIndex == 0 ? 0 : currentIndex - 1;
-            prepareMusic();
-            playMusic(playButton);
-        }
     }
 
     public void forward (View v) {
 
-        currentIndex++;
-
-        if(songList.size() <= currentIndex) {
-            playButton.setText("Play");
-            currentIndex = 0;
-            prepareMusic();
-        } else {
-            prepareMusic();
-            playMusic(playButton);
-        }
     }
 
     public void repeat (View v) {
-        mediaPlayer.setLooping(!mediaPlayer.isLooping());
-        v.setBackgroundResource(mediaPlayer.isLooping()? R.color.green: R.color.grey);
+
     }
 
     public void shuffle (View v) {
@@ -129,7 +115,7 @@ public class PlayerActivity extends AppCompatActivity {
 
         songList.remove(currentIndex);
 
-        prioritySong = musicService.getRecentsSongs(20);
+        prioritySong = musicRepository.getRecentsSongs(20);
         songList.removeAll(prioritySong);
 
         songList = shuffleService.shuffleWithPriority(prioritySong, songList, 80);
@@ -138,35 +124,8 @@ public class PlayerActivity extends AppCompatActivity {
         currentIndex = 0;
     }
 
-    private void prepareMusic() {
-        if(songList != null && songList.size() > currentIndex) {
-            try {
-                mediaPlayer.reset();
-                mediaPlayer.setDataSource(songList.get(currentIndex).getPathName());
-                mediaPlayer.prepare();
 
-                titleTV.setText(songList.get(currentIndex).getTitle());
-                singerTV.setText(songList.get(currentIndex).getArtist());
-
-                durationSB.setProgress(0);
-                durationSB.setMax(mediaPlayer.getDuration());
-
-            } catch(IOException excetion) {
-                Log.e("ERREUR", excetion.getMessage());
-            }
-        }
-    }
-
-    private void addEndListener (MediaPlayer mediaPlayer) {
-        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-            @Override
-            public void onCompletion(MediaPlayer mp) {
-                forward(null);
-            }
-        });
-    }
-
-    private void initDurationSeekBar(final MediaPlayer mediaPlayer, final SeekBar seekBar){
+   /** private void initDurationSeekBar(final MediaPlayer mediaPlayer, final SeekBar seekBar){
 
         final Handler handler = new Handler();
         PlayerActivity.this.runOnUiThread(new Runnable() {
@@ -193,7 +152,7 @@ public class PlayerActivity extends AppCompatActivity {
             public void onStopTrackingTouch(SeekBar seekBar) {
             }
         });
-    }
+    }*/
 
     private void initWidgets() {
         playButton = (Button) findViewById(R.id.playButton);

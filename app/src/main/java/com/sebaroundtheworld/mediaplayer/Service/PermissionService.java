@@ -1,4 +1,4 @@
-package Service;
+package com.sebaroundtheworld.mediaplayer.Service;
 
 import android.app.Activity;
 import android.content.pm.PackageManager;
