@@ -8,7 +8,9 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.util.Pair;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -22,6 +24,7 @@ import com.sebaroundtheworld.mediaplayer.Model.Song;
 import com.sebaroundtheworld.mediaplayer.R;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.sebaroundtheworld.mediaplayer.Repository.MusicRepository;
 import com.sebaroundtheworld.mediaplayer.Service.MusicService;
@@ -32,12 +35,16 @@ public class SearchActivity extends AppCompatActivity {
 
     private Toolbar searchMenu;
     private ListView musicListView;
+    private ListView genreListView;
 
     private MusicRepository musicRepository;
     private MusicService musicService;
 
     private ArrayList<Song> listSong;
-    private ArrayAdapter<Song> musicAdapter;
+    private List<String> listName;
+    private List<Pair<Integer,String>> listNamePair;
+    private ArrayAdapter<Song> songArrayAdapter;
+    private ArrayAdapter<String> nameArrayAdapter;
 
     private Intent playIntent;
 
@@ -62,12 +69,13 @@ public class SearchActivity extends AppCompatActivity {
         setContentView(R.layout.activity_search);
 
         listSong = new ArrayList<>();
+        listName = new ArrayList<>();
 
         musicRepository = new MusicRepository(this);
 
         if (PermissionService.hasPermission(Manifest.permission.READ_EXTERNAL_STORAGE,
                 Constants.MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE, this)) {
-
+            listSong.clear();
             listSong.addAll((ArrayList) musicRepository.getMusics());
         }
 
@@ -96,7 +104,6 @@ public class SearchActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.search_menu, menu);
         return true;
     }
@@ -107,8 +114,9 @@ public class SearchActivity extends AppCompatActivity {
             case Constants.MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE: {
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    listSong.clear();
                     listSong.addAll((ArrayList<Song>) musicRepository.getMusics());
-                    musicAdapter.notifyDataSetChanged();
+                    songArrayAdapter.notifyDataSetChanged();
                 } else {
                     Toast.makeText(this, "No autorised to get the musics", Toast.LENGTH_SHORT).show();
                 }
@@ -120,13 +128,41 @@ public class SearchActivity extends AppCompatActivity {
     private void initSearchMenu() {
         searchMenu = (Toolbar) findViewById(R.id.searchMenu);
         setSupportActionBar(searchMenu);
+
+        searchMenu.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+
+                switch(item.getItemId()) {
+                    case R.id.search_menu_genres :
+                        listName.clear();
+                        listNamePair = musicRepository.getAllGenres();
+                        listName.addAll(returnListNameFromAPair(listNamePair));
+                        nameArrayAdapter.notifyDataSetChanged();
+                        musicListView.setVisibility(View.GONE);
+                        genreListView.setVisibility(View.VISIBLE);
+
+                }
+                return true;
+            }
+        });
     }
 
-    private void initWidget() {
-        musicListView = (ListView) findViewById(R.id.musicListView);
+    private List<String> returnListNameFromAPair (List<Pair<Integer,String>> listPair) {
+        List<String> nameList = new ArrayList<>();
 
-        musicAdapter = new ArrayAdapter<>(this, R.layout.support_simple_spinner_dropdown_item, listSong);
-        musicListView.setAdapter(musicAdapter);
+        for(Pair<Integer, String> pair : listPair) {
+            nameList.add(pair.second);
+        }
+        return nameList;
+    }
+
+
+    private void initWidget() {
+        musicListView = (ListView) findViewById(R.id.searchActivitySongListView);
+
+        songArrayAdapter = new ArrayAdapter<>(this, R.layout.support_simple_spinner_dropdown_item, listSong);
+        musicListView.setAdapter(songArrayAdapter);
 
         musicListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -136,6 +172,23 @@ public class SearchActivity extends AppCompatActivity {
                 musicIntent.putExtra(Constants.INTENT_KEY_INDEX_SONG, position);
 
                 startActivity(musicIntent);
+            }
+        });
+        genreListView = (ListView) findViewById(R.id.searchActivityGenreListView);
+
+        nameArrayAdapter = new ArrayAdapter<>(this, R.layout.support_simple_spinner_dropdown_item, listName);
+        genreListView.setAdapter(nameArrayAdapter);
+
+
+        genreListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                listSong.clear();
+                listSong.addAll((ArrayList<Song>) musicRepository.getSongByGenre(listNamePair.get(position).first))
+                ;
+                genreListView.setVisibility(View.GONE);
+                musicListView.setVisibility(View.VISIBLE);
+                songArrayAdapter.notifyDataSetChanged();
             }
         });
     }
