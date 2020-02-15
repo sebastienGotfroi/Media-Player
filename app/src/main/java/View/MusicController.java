@@ -10,6 +10,10 @@ public class MusicController extends android.widget.MediaController {
         super(c);
     }
 
+    public void hide () {
+        
+    }
+
     public boolean dispatchKeyEvent (KeyEvent event) {
         if (event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
             ((Activity) getContext()).finish();

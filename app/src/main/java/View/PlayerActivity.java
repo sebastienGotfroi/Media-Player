@@ -9,9 +9,7 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.View;
-import android.widget.Button;
 import android.widget.MediaController;
-import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.sebaroundtheworld.mediaplayer.Model.Song;
@@ -21,10 +19,11 @@ import java.util.List;
 
 import com.sebaroundtheworld.mediaplayer.Repository.MusicRepository;
 import com.sebaroundtheworld.mediaplayer.Service.MusicService;
+import com.sebaroundtheworld.mediaplayer.Service.MusicServiceCallback;
 import com.sebaroundtheworld.mediaplayer.Service.ShuffleService;
 import com.sebaroundtheworld.mediaplayer.Utils.Constants;
 
-public class PlayerActivity extends AppCompatActivity implements MediaController.MediaPlayerControl {
+public class PlayerActivity extends AppCompatActivity implements MediaController.MediaPlayerControl, MusicServiceCallback {
 
     private MusicService musicService;
     private ShuffleService shuffleService;
@@ -48,6 +47,8 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
             MusicService.MusicBinder binder = (MusicService.MusicBinder)service;
 
             musicService = binder.getService();
+            musicService.setMusicServiceCallback(PlayerActivity.this);
+            musicService.setSong(currentIndex);
             start();
             musicBound = true;
         }
@@ -123,14 +124,12 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
             @Override
             public void onClick(View v) {
                 currentIndex = musicService.next();
-                musicController.show();
                 fillMetadata();
             }
         }, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 currentIndex = musicService.prev();
-                musicController.show(0);
                 fillMetadata();
             }
         });
@@ -155,10 +154,8 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
 
     @Override
     public void start() {
-        musicService.setSong(currentIndex);
         musicService.playSong();
         fillMetadata();
-        musicController.show(0);
     }
 
     @Override
@@ -225,6 +222,14 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
     private void initWidgets() {
         singerTV = (TextView) findViewById(R.id.singerTV);
         titleTV = (TextView) findViewById(R.id.titleTV);
-        setMusicController();
+
+        if(musicController == null) {
+            setMusicController();
+        }
+    }
+
+    @Override
+    public void showController() {
+        musicController.show(0);
     }
 }
