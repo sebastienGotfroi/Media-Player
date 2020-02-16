@@ -65,6 +65,7 @@ public  class MusicService extends Service implements   MediaPlayer.OnPreparedLi
     @Override
     public void onCompletion(MediaPlayer mp) {
         next();
+        musicServiceCallback.onSongChange(songPos);
     }
 
     @Override
@@ -81,9 +82,17 @@ public  class MusicService extends Service implements   MediaPlayer.OnPreparedLi
         songList = theSongs;
     }
 
+    public List<Song> getListSong() {
+        return songList;
+    }
+
     public void setSong(int songIndex){
         isPaused = false;
         songPos=songIndex;
+    }
+
+    public boolean musicIsLoaded() {
+        return (mediaPlayer.isPlaying() || isPaused);
     }
 
     public void playSong() {
@@ -111,7 +120,7 @@ public  class MusicService extends Service implements   MediaPlayer.OnPreparedLi
         isPaused = true;
     }
 
-    public int prev() {
+    public void prev() {
         songPos--;
 
         if(songPos<0) {
@@ -120,10 +129,10 @@ public  class MusicService extends Service implements   MediaPlayer.OnPreparedLi
 
         isPaused = false;
         playSong();
-        return songPos;
+        musicServiceCallback.onSongChange(songPos);
     }
 
-    public int next() {
+    public void next() {
         songPos++;
 
         if(songPos >= songList.size()) {
@@ -133,7 +142,7 @@ public  class MusicService extends Service implements   MediaPlayer.OnPreparedLi
             playSong();
         }
 
-        return songPos;
+        musicServiceCallback.onSongChange(songPos);
     }
 
     public int getDuration() {

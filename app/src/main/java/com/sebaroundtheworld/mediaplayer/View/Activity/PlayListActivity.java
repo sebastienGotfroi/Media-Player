@@ -1,12 +1,19 @@
 package com.sebaroundtheworld.mediaplayer.View.Activity;
 
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.view.KeyEvent;
 import android.view.View;
 
 import androidx.fragment.app.FragmentActivity;
 
 import com.sebaroundtheworld.mediaplayer.Model.Song;
 import com.sebaroundtheworld.mediaplayer.R;
+import com.sebaroundtheworld.mediaplayer.Service.MusicService;
 import com.sebaroundtheworld.mediaplayer.Utils.Constants;
 import com.sebaroundtheworld.mediaplayer.View.SongListFragment;
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
@@ -14,12 +21,31 @@ import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PlayListActivity extends FragmentActivity implements SongListFragment.SongListListener {
+public class PlayListActivity extends AbstractSlidingActivity {
 
-    List<Song> songList;
-    SongListFragment songListFragment;
-    PlayerFragment playerFragment;
-    SlidingUpPanelLayout slidingUpPanelLayout;
+    private MusicService musicService;
+
+    private List<Song> songList;
+    private SongListFragment songListFragment;
+    private PlayerFragment playerFragment;
+    private SlidingUpPanelLayout slidingUpPanelLayout;
+
+    private Intent playIntent;
+
+    private ServiceConnection musicConnection = new ServiceConnection(){
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            MusicService.MusicBinder binder = (MusicService.MusicBinder)service;
+            musicService = binder.getService();
+
+            setMusicService(musicService);
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+        }
+    };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -30,25 +56,30 @@ public class PlayListActivity extends FragmentActivity implements SongListFragme
         initWidget();
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        if(playIntent==null) {
+            playIntent = new Intent(this, MusicService.class);
+
+            if (!bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE)){
+                startService(playIntent);
+            }
+            bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        unbindService(musicConnection);
+        super.onDestroy();
+    }
+
     private void initWidget() {
 
-        slidingUpPanelLayout = findViewById(R.id.sliding_layout);
+        slidingUpPanelLayout = findViewById(R.id.activity_playlist_sliding_layout);
 
-        slidingUpPanelLayout.addPanelSlideListener(new SlidingUpPanelLayout.PanelSlideListener() {
-            @Override
-            public void onPanelSlide(View panel, float slideOffset) {
-            }
-
-            @Override
-            public void onPanelStateChanged(View panel, SlidingUpPanelLayout.PanelState previousState, SlidingUpPanelLayout.PanelState newState) {
-
-                switch (newState) {
-                    case COLLAPSED : playerFragment.removeController();
-                        break;
-                    case EXPANDED: playerFragment.showController();
-                }
-            }
-        });
+        setSlidingPanel(slidingUpPanelLayout);
 
         songListFragment = new SongListFragment(this);
 
@@ -58,18 +89,23 @@ public class PlayListActivity extends FragmentActivity implements SongListFragme
 
         getSupportFragmentManager().beginTransaction().replace(R.id.activity_playlist_container, songListFragment).commit();
 
-        playerFragment = new PlayerFragment();
-        playerFragment.setArguments(bundle);
+        initPlayerFragment();
+    }
 
+    private void initPlayerFragment() {
+
+        playerFragment = new PlayerFragment();
         getSupportFragmentManager().beginTransaction().replace(R.id.activity_playlist_player, playerFragment).commit();
+
     }
 
     @Override
-    public void onItemSelected(int position) {
-        playerFragment.setSongPos(position);
-        playerFragment.start();
-        playerFragment.showController();
+    public List<Song> getListSong() {
+        return songList;
+    }
 
-        slidingUpPanelLayout.setPanelState(SlidingUpPanelLayout.PanelState.EXPANDED);
+    @Override
+    public PlayerFragment getPlayerFragment() {
+        return playerFragment;
     }
 }

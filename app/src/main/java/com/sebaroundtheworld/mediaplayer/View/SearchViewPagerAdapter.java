@@ -11,8 +11,12 @@ import com.sebaroundtheworld.mediaplayer.View.Fragment.GenreListFragment;
 
 public class SearchViewPagerAdapter extends FragmentStateAdapter {
 
+    SongListFragment.SongListListener activity;
+
     public SearchViewPagerAdapter(FragmentActivity fragmentActivity){
+
         super(fragmentActivity);
+        activity = (SongListFragment.SongListListener) fragmentActivity;
     }
 
     @NonNull
@@ -21,7 +25,7 @@ public class SearchViewPagerAdapter extends FragmentStateAdapter {
 
         switch(position) {
             case 0:
-                //return new SongListFragment();
+                return new SongListFragment(activity);
             case 1:
                 return new GenreListFragment();
             case 2:

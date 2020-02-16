@@ -60,9 +60,12 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
 
             musicService = binder.getService();
             musicService.setMusicServiceCallback(PlayerFragment.this);
-            musicService.setList(songList);
 
             musicBound = true;
+
+            if(musicService.musicIsLoaded()) {
+                initPlayerIfMusicIsPlaying();
+            }
         }
 
         @Override
@@ -70,6 +73,24 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
             musicBound = false;
         }
     };
+
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        shuffleService = new ShuffleService();
+        musicRepository = new MusicRepository(getContext());
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if(playIntent==null){
+            playIntent = new Intent(getContext(), MusicService.class);
+            getContext().bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
+        }
+    }
 
     @Override
     public View onCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -89,37 +110,12 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
         // setSupportActionBar(playerMenu);
     }
 
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        shuffleService = new ShuffleService();
-        musicRepository = new MusicRepository(getContext());
-
-        songList = getArguments().getParcelableArrayList(Constants.INTENT_KEY_LIST_SONG);
-
-        currentList = new ArrayList<>();
-        currentList.addAll(songList);
-
-        currentIndex = getArguments().getInt(Constants.INTENT_KEY_INDEX_SONG);
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        if(playIntent==null){
-            playIntent = new Intent(getContext(), MusicService.class);
-            getContext().bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
-        }
-    }
-
     @Override
     public void onResume(){
         super.onResume();
         if (isPaused) {
-            currentIndex = musicService.getCurrentSongPosition();
-            fillMetadata();
+            initPlayerIfMusicIsPlaying();
+            musicService.setMusicServiceCallback(this);
             isPaused = false;
         }
     }
@@ -168,33 +164,10 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
         super.onDestroy();
      }
 
-    private void setMusicController(View view) {
-        musicController = new MusicController(getContext());
-
-        musicController.setMediaPlayer(this);
-        musicController.setEnabled(true);
-        musicController.setAnchorView(view.findViewById(R.id.playerActivityControllerView));
-
-        musicController.setPrevNextListeners(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                currentIndex = musicService.next();
-                if (currentIndex == 0) {
-                    pause();
-                    seekTo(0);
-                    musicService.setSong(0);
-                    showController();
-                }
-                fillMetadata();
-            }
-        }, new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                currentIndex = musicService.prev();
-                fillMetadata();
-            }
-        });
-    }
+     public void setSongList(List<Song> songList) {
+        this.songList = currentList = songList;
+        this.musicService.setList(songList);
+     }
 
     public void shuffle () {
 
@@ -228,6 +201,7 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
 
     public void setSongPos(int pos) {
         if(pos < currentList.size()){
+            currentIndex = pos;
             musicService.setSong(pos);
         }
     }
@@ -294,17 +268,49 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
         return 0;
     }
 
-    private void fillMetadata() {
-        singerTV.setText(currentList.get(currentIndex).getArtist());
-        titleTV.setText(currentList.get(currentIndex).getTitle());
-    }
-
     @Override
     public void showController() {
         musicController.show(0);
     }
 
+    @Override
+    public void onSongChange(int newPosition) {
+        currentIndex = newPosition;
+        fillMetadata();
+    }
+
     public void removeController() {
         musicController.remove();
+    }
+
+    private void initPlayerIfMusicIsPlaying() {
+        songList = currentList = musicService.getListSong();
+        currentIndex = musicService.getCurrentSongPosition();
+        fillMetadata();
+    }
+
+    private void setMusicController(View view) {
+        musicController = new MusicController(getContext());
+
+        musicController.setMediaPlayer(this);
+        musicController.setEnabled(true);
+        musicController.setAnchorView(view.findViewById(R.id.playerActivityControllerView));
+
+        musicController.setPrevNextListeners(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                musicService.next();
+            }
+        }, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                musicService.prev();
+            }
+        });
+    }
+
+    private void fillMetadata() {
+        singerTV.setText(currentList.get(currentIndex).getArtist());
+        titleTV.setText(currentList.get(currentIndex).getTitle());
     }
 }

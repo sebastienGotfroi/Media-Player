@@ -16,7 +16,8 @@ public class MusicController extends android.widget.MediaController {
 
     public boolean dispatchKeyEvent (KeyEvent event) {
         if (event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
-            ((Activity) getContext()).finish();
+            remove();
+            return false;
         }
 
         return super.dispatchKeyEvent(event);

@@ -11,7 +11,6 @@ import android.os.IBinder;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.google.android.material.tabs.TabLayout;
@@ -20,19 +19,26 @@ import com.sebaroundtheworld.mediaplayer.Model.Song;
 import com.sebaroundtheworld.mediaplayer.R;
 
 import java.util.ArrayList;
+import java.util.List;
 
+import com.sebaroundtheworld.mediaplayer.Repository.MusicRepository;
 import com.sebaroundtheworld.mediaplayer.Service.MusicService;
 import com.sebaroundtheworld.mediaplayer.Service.PermissionService;
 import com.sebaroundtheworld.mediaplayer.Utils.Constants;
 import com.sebaroundtheworld.mediaplayer.View.SearchViewPagerAdapter;
+import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 
-public class SearchActivity extends AppCompatActivity {
+public class SearchActivity extends AbstractSlidingActivity {
 
     private MusicService musicService;
+    private MusicRepository musicRepository;
 
     private ArrayList<Song> listSong;
 
     private Intent playIntent;
+
+    private PlayerFragment playerFragment;
+    private SlidingUpPanelLayout slidingUpPanelLayout;
 
     private ServiceConnection musicConnection = new ServiceConnection(){
 
@@ -40,7 +46,9 @@ public class SearchActivity extends AppCompatActivity {
         public void onServiceConnected(ComponentName name, IBinder service) {
             MusicService.MusicBinder binder = (MusicService.MusicBinder)service;
             musicService = binder.getService();
-            musicService.setList(listSong);
+            listSong = (ArrayList) musicRepository.getMusics();
+
+            setMusicService(musicService);
         }
 
         @Override
@@ -52,6 +60,8 @@ public class SearchActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search);
+
+        musicRepository = new MusicRepository(this);
 
         if (PermissionService.hasPermission(Manifest.permission.READ_EXTERNAL_STORAGE,
                 Constants.MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE, this)) {
@@ -115,5 +125,28 @@ public class SearchActivity extends AppCompatActivity {
                 tab.setText(text);
             }
         }).attach();
+
+        slidingUpPanelLayout = (SlidingUpPanelLayout) findViewById(R.id.activity_search_sliding_layout);
+
+        setSlidingPanel(slidingUpPanelLayout);
+
+        initPlayerFragment();
+
+    }
+
+    private void initPlayerFragment() {
+
+        playerFragment = new PlayerFragment();
+        getSupportFragmentManager().beginTransaction().replace(R.id.activity_search_player, playerFragment).commit();
+    }
+
+    @Override
+    public List<Song> getListSong() {
+        return listSong;
+    }
+
+    @Override
+    public PlayerFragment getPlayerFragment() {
+        return playerFragment;
     }
 }
