@@ -6,7 +6,13 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context="View.PlayerActivity">
+    tools:context="com.sebaroundtheworld.mediaplayer.View.PlayerActivity">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/searchMenu"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/green" />
 
     <ImageView
         android:layout_width="match_parent"

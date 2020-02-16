@@ -1,13 +1,19 @@
-package View;
+package com.sebaroundtheworld.mediaplayer.View;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.text.SpannableString;
+import android.text.style.ForegroundColorSpan;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.MediaController;
 import android.widget.TextView;
@@ -15,6 +21,8 @@ import android.widget.TextView;
 import com.sebaroundtheworld.mediaplayer.Model.Song;
 import com.sebaroundtheworld.mediaplayer.R;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.sebaroundtheworld.mediaplayer.Repository.MusicRepository;
@@ -34,11 +42,12 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
     private MusicController musicController;
 
     private List<Song> songList;
+    private List<Song> currentList;
     private int currentIndex;
 
     private Intent playIntent;
     private boolean musicBound = false;
-    private boolean pause = false;
+    private boolean isShuffle = false;
 
     private ServiceConnection musicConnection = new ServiceConnection(){
 
@@ -48,6 +57,7 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
 
             musicService = binder.getService();
             musicService.setMusicServiceCallback(PlayerActivity.this);
+            musicService.setList(songList);
             musicService.setSong(currentIndex);
             start();
             musicBound = true;
@@ -72,6 +82,9 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
 
         songList = getIntent().getExtras().getParcelableArrayList(Constants.INTENT_KEY_LIST_SONG);
 
+        currentList = new ArrayList<>();
+        currentList.addAll(songList);
+
         currentIndex = getIntent().getExtras().getInt(Constants.INTENT_KEY_INDEX_SONG);
     }
 
@@ -85,26 +98,35 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.player_menu, menu);
+        return true;
+    }
 
-        if(pause) {
-            musicController.show(0);
-            pause = false;
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.player_activity_shuffle :
+                if(isShuffle) {
+                    SpannableString s = new SpannableString(item.getTitle());
+                    s.setSpan(new ForegroundColorSpan(Color.WHITE), 0, s.length(), 0);
+                    item.setTitle(s);
+
+                    deShuffle();
+
+                    isShuffle = false;
+                } else {
+                    SpannableString s = new SpannableString(item.getTitle());
+                    s.setSpan(new ForegroundColorSpan(Color.BLACK), 0, s.length(), 0);
+                    item.setTitle(s);
+
+                    isShuffle = true;
+
+                    shuffle();
+                }
+                return true;
         }
-
-    }
-
-    @Override
-    protected void onPause() {
-        pause = true;
-        super.onPause();
-    }
-
-    @Override
-    protected void onStop() {
-        musicController.hide();
-        super.onStop();
+        return super.onOptionsItemSelected(item);
     }
 
      @Override
@@ -135,21 +157,34 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
         });
     }
 
-    public void shuffle (View v) {
+    public void shuffle () {
+
+        currentList = new ArrayList<>();
+        currentList.addAll(songList);
 
         List<Song> prioritySong;
 
         Song currentSong = songList.get(currentIndex);
 
-        songList.remove(currentIndex);
+        currentList.remove(currentIndex);
 
         prioritySong = musicRepository.getRecentsSongs(20);
-        songList.removeAll(prioritySong);
+        currentList.removeAll(prioritySong);
 
-        songList = shuffleService.shuffleWithPriority(prioritySong, songList, 80);
+        currentList = shuffleService.shuffleWithPriority(prioritySong, currentList, 80);
 
-        songList.add(0, currentSong);
+        currentList.add(0, currentSong);
         currentIndex = 0;
+        musicService.setList(currentList);
+        musicService.setSong(0);
+    }
+
+    public void deShuffle() {
+        musicService.setList(songList);
+        musicService.setSong(songList.indexOf(currentList.get(currentIndex)));
+
+        currentList.clear();
+        currentList.addAll(songList);
     }
 
     @Override
@@ -165,7 +200,7 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
 
     @Override
     public int getDuration() {
-        if (musicService != null && musicService.isPlaying()) {
+        if (musicService != null) {
             return musicService.getDuration();
         }
         return 0;
@@ -173,7 +208,7 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
 
     @Override
     public int getCurrentPosition() {
-        if (musicService != null && musicService.isPlaying()) {
+        if (musicService != null) {
             return musicService.getCurrentPosition();
         }
         return 0;
@@ -215,8 +250,8 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
     }
 
     private void fillMetadata() {
-        singerTV.setText(songList.get(currentIndex).getArtist());
-        titleTV.setText(songList.get(currentIndex).getTitle());
+        singerTV.setText(currentList.get(currentIndex).getArtist());
+        titleTV.setText(currentList.get(currentIndex).getTitle());
     }
 
     private void initWidgets() {
@@ -226,6 +261,9 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
         if(musicController == null) {
             setMusicController();
         }
+
+        Toolbar playerMenu = (Toolbar) findViewById(R.id.searchMenu);
+        setSupportActionBar(playerMenu);
     }
 
     @Override

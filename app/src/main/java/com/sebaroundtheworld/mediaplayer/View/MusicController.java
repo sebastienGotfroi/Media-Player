@@ -1,4 +1,4 @@
-package View;
+package com.sebaroundtheworld.mediaplayer.View;
 
 import android.app.Activity;
 import android.content.Context;

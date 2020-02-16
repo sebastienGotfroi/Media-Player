@@ -3,10 +3,8 @@ package com.sebaroundtheworld.mediaplayer.Service;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.media.VolumeShaper;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.PowerManager;
@@ -27,15 +25,12 @@ public  class MusicService extends Service implements   MediaPlayer.OnPreparedLi
     private MediaPlayer mediaPlayer;
     private MusicServiceCallback musicServiceCallback;
     private AudioManager audioManager;
-    private AudioAttributes playbackAttributes;
 
     private List<Song> songList;
     private int songPos;
     private final IBinder musicBind = new MusicBinder();
 
     private boolean isPaused = false;
-
-    private static final int NOTIFY_ID=1;
 
     @Nullable
     @Override
@@ -45,13 +40,8 @@ public  class MusicService extends Service implements   MediaPlayer.OnPreparedLi
 
     @Override
     public boolean onUnbind(Intent intent){
-        //mediaPlayer.stop();
-        //mediaPlayer.release();
-        return false;
-    }
 
-    public void setMusicServiceCallback(MusicServiceCallback msc) {
-        musicServiceCallback = msc;
+        return false;
     }
 
     public void onCreate(){
@@ -68,18 +58,8 @@ public  class MusicService extends Service implements   MediaPlayer.OnPreparedLi
 
     @Override
     public void onPrepared(MediaPlayer mp) {
-
         mp.start();
         musicServiceCallback.showController();
-    }
-
-    public void setList(List<Song> theSongs){
-        songList = theSongs;
-    }
-
-    public void setSong(int songIndex){
-        isPaused = false;
-        songPos=songIndex;
     }
 
     @Override
@@ -91,6 +71,19 @@ public  class MusicService extends Service implements   MediaPlayer.OnPreparedLi
     public boolean onError(MediaPlayer mp, int what, int extra) {
         mp.reset();
         return false;
+    }
+
+    public void setMusicServiceCallback(MusicServiceCallback msc) {
+        musicServiceCallback = msc;
+    }
+
+    public void setList(List<Song> theSongs){
+        songList = theSongs;
+    }
+
+    public void setSong(int songIndex){
+        isPaused = false;
+        songPos=songIndex;
     }
 
     public void playSong() {
@@ -118,6 +111,31 @@ public  class MusicService extends Service implements   MediaPlayer.OnPreparedLi
         isPaused = true;
     }
 
+    public int prev() {
+        songPos--;
+
+        if(songPos<0) {
+            songPos = 0;
+        }
+
+        isPaused = false;
+        playSong();
+        return songPos;
+    }
+
+    public int next() {
+        songPos++;
+
+        if(songPos >= songList.size()) {
+            songPos = 0;
+        } else {
+            isPaused = false;
+            playSong();
+        }
+
+        return songPos;
+    }
+
     public int getDuration() {
         return mediaPlayer.getDuration();
     }
@@ -134,24 +152,6 @@ public  class MusicService extends Service implements   MediaPlayer.OnPreparedLi
         return mediaPlayer.getCurrentPosition();
     }
 
-    public int prev() {
-        songPos--;
-        if(songPos<0) {
-            songPos = 0;
-        }
-        playSong();
-        return songPos;
-    }
-
-    public int next() {
-        songPos++;
-        if(songPos >= songList.size()) {
-            songPos = 0;
-        }
-        playSong();
-        return songPos;
-    }
-
     public void initMediaPlayer() {
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);
@@ -163,7 +163,6 @@ public  class MusicService extends Service implements   MediaPlayer.OnPreparedLi
 
     public void initAudioManager() {
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-
     }
 
     @Override
