@@ -105,9 +105,6 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
         if(musicController == null) {
             setMusicController(view);
         }
-
-        // Toolbar playerMenu = (Toolbar) findViewById(R.id.searchMenu);
-        // setSupportActionBar(playerMenu);
     }
 
     @Override
@@ -119,38 +116,6 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
             isPaused = false;
         }
     }
-
-    /*@Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.player_menu, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.player_activity_shuffle :
-                if(isShuffle) {
-                    SpannableString s = new SpannableString(item.getTitle());
-                    s.setSpan(new ForegroundColorSpan(Color.WHITE), 0, s.length(), 0);
-                    item.setTitle(s);
-
-                    deShuffle();
-
-                    isShuffle = false;
-                } else {
-                    SpannableString s = new SpannableString(item.getTitle());
-                    s.setSpan(new ForegroundColorSpan(Color.BLACK), 0, s.length(), 0);
-                    item.setTitle(s);
-
-                    isShuffle = true;
-
-                    shuffle();
-                }
-                return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }**/
 
     @Override
     public void onPause() {
@@ -270,7 +235,9 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
 
     @Override
     public void showController() {
-        musicController.show(0);
+        if(!isPaused) {
+            musicController.show(0);
+        }
     }
 
     @Override
