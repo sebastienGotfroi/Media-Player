@@ -18,6 +18,7 @@ import com.sebaroundtheworld.mediaplayer.Model.Song;
 import com.sebaroundtheworld.mediaplayer.R;
 import com.sebaroundtheworld.mediaplayer.Repository.MusicRepository;
 import com.sebaroundtheworld.mediaplayer.Utils.Constants;
+import com.sebaroundtheworld.mediaplayer.View.Activity.PlayerActivity;
 
 import java.util.ArrayList;
 
@@ -34,11 +35,7 @@ public class SongListFragment extends Fragment {
         super.onCreate(savedInstanceState);
         musicRepository = new MusicRepository(getContext());
 
-        if(savedInstanceState != null && savedInstanceState.containsKey(Constants.INTENT_KEY_LIST_SONG)) {
-            listSong = savedInstanceState.getParcelableArrayList(Constants.INTENT_KEY_LIST_SONG);
-        } else {
-            listSong = (ArrayList) musicRepository.getMusics();
-        }
+        getSongs();
     }
 
     @Override
@@ -75,5 +72,15 @@ public class SongListFragment extends Fragment {
             }
         });
 
+    }
+
+    private void getSongs() {
+        Bundle bundle = getArguments();
+
+        if( bundle != null && bundle.containsKey(Constants.INTENT_KEY_LIST_SONG)) {
+            listSong = bundle.getParcelableArrayList(Constants.INTENT_KEY_LIST_SONG);
+        } else {
+            listSong = (ArrayList) musicRepository.getMusics();
+        }
     }
 }

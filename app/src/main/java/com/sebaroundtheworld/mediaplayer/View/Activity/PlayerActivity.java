@@ -1,4 +1,4 @@
-package com.sebaroundtheworld.mediaplayer.View;
+package com.sebaroundtheworld.mediaplayer.View.Activity;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -22,7 +22,6 @@ import com.sebaroundtheworld.mediaplayer.Model.Song;
 import com.sebaroundtheworld.mediaplayer.R;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import com.sebaroundtheworld.mediaplayer.Repository.MusicRepository;
@@ -30,6 +29,7 @@ import com.sebaroundtheworld.mediaplayer.Service.MusicService;
 import com.sebaroundtheworld.mediaplayer.Service.MusicServiceCallback;
 import com.sebaroundtheworld.mediaplayer.Service.ShuffleService;
 import com.sebaroundtheworld.mediaplayer.Utils.Constants;
+import com.sebaroundtheworld.mediaplayer.View.MusicController;
 
 public class PlayerActivity extends AppCompatActivity implements MediaController.MediaPlayerControl, MusicServiceCallback {
 
@@ -149,6 +149,7 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
                 if (currentIndex == 0) {
                     pause();
                     seekTo(0);
+                    musicService.setSong(0);
                     showController();
                 }
                 fillMetadata();

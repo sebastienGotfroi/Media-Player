@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context="com.sebaroundtheworld.mediaplayer.View.PlayerActivity">
+    tools:context="com.sebaroundtheworld.mediaplayer.View.Activity.PlayerActivity">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/searchMenu"

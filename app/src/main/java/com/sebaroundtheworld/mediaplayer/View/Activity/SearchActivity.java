@@ -1,4 +1,4 @@
-package com.sebaroundtheworld.mediaplayer.View;
+package com.sebaroundtheworld.mediaplayer.View.Activity;
 
 import android.Manifest;
 import android.content.ComponentName;
@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import com.sebaroundtheworld.mediaplayer.Service.MusicService;
 import com.sebaroundtheworld.mediaplayer.Service.PermissionService;
 import com.sebaroundtheworld.mediaplayer.Utils.Constants;
+import com.sebaroundtheworld.mediaplayer.View.SearchViewPagerAdapter;
 
 public class SearchActivity extends AppCompatActivity {
 

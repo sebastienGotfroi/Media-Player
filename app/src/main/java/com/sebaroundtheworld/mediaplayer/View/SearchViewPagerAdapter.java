@@ -6,6 +6,9 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
+import com.sebaroundtheworld.mediaplayer.View.Fragment.ArtistListFragment;
+import com.sebaroundtheworld.mediaplayer.View.Fragment.GenreListFragment;
+
 public class SearchViewPagerAdapter extends FragmentStateAdapter {
 
     public SearchViewPagerAdapter(FragmentActivity fragmentActivity){

@@ -1,26 +1,13 @@
-package com.sebaroundtheworld.mediaplayer.View;
+package com.sebaroundtheworld.mediaplayer.View.Fragment;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
-import android.util.Pair;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-
-import com.sebaroundtheworld.mediaplayer.R;
-import com.sebaroundtheworld.mediaplayer.Repository.MusicRepository;
 import com.sebaroundtheworld.mediaplayer.Utils.Constants;
+import com.sebaroundtheworld.mediaplayer.View.Activity.PlayListActivity;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class GenreListFragment extends ListFragment {
 
@@ -37,7 +24,7 @@ public class GenreListFragment extends ListFragment {
     }
 
     protected void onItemSelected(View view, int position) {
-        Intent musicIntent = new Intent(getActivity(), PlayerActivity.class);
+        Intent musicIntent = new Intent(getActivity(), PlayListActivity.class);
         musicIntent.putParcelableArrayListExtra(Constants.INTENT_KEY_LIST_SONG, (ArrayList) musicRepository.getSongByGenre(listPair.get(position).first));
         musicIntent.putExtra(Constants.INTENT_KEY_INDEX_SONG, 0);
 

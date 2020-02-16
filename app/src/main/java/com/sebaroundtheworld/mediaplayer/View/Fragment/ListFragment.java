@@ -1,4 +1,4 @@
-package com.sebaroundtheworld.mediaplayer.View;
+package com.sebaroundtheworld.mediaplayer.View.Fragment;
 
 import android.content.Intent;
 import android.os.Bundle;

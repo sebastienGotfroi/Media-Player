@@ -9,14 +9,19 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.NoActionBar">
-        <activity android:name="com.sebaroundtheworld.mediaplayer.View.SearchActivity">
+        <activity android:name="com.sebaroundtheworld.mediaplayer.View.Activity.SearchActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.sebaroundtheworld.mediaplayer.View.PlayerActivity">
+        <activity android:name="com.sebaroundtheworld.mediaplayer.View.Activity.PlayerActivity">
+            <intent-filter>
+                <category android:name="android.intent.category.APP_MUSIC" />
+            </intent-filter>
+        </activity>
+        <activity android:name="com.sebaroundtheworld.mediaplayer.View.Activity.PlayListActivity">
             <intent-filter>
                 <category android:name="android.intent.category.APP_MUSIC" />
             </intent-filter>
