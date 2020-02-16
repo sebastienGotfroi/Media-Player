@@ -146,6 +146,11 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
             @Override
             public void onClick(View v) {
                 currentIndex = musicService.next();
+                if (currentIndex == 0) {
+                    pause();
+                    seekTo(0);
+                    showController();
+                }
                 fillMetadata();
             }
         }, new View.OnClickListener() {

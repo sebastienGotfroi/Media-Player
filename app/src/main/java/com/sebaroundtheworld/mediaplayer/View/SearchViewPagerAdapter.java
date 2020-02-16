@@ -4,7 +4,6 @@ package com.sebaroundtheworld.mediaplayer.View;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
-import androidx.fragment.app.FragmentManager;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 public class SearchViewPagerAdapter extends FragmentStateAdapter {
@@ -22,12 +21,14 @@ public class SearchViewPagerAdapter extends FragmentStateAdapter {
                 return new SongListFragment();
             case 1:
                 return new GenreListFragment();
+            case 2:
+                return new ArtistListFragment();
         }
         return null;
     }
 
     @Override
     public int getItemCount() {
-        return 2;
+        return 3;
     }
 }

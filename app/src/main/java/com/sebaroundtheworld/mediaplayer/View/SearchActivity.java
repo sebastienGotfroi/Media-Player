@@ -108,6 +108,8 @@ public class SearchActivity extends AppCompatActivity {
                         break;
                     case 1 : text = getResources().getString(R.string.types);
                         break;
+                    case 2 : text = getResources().getString(R.string.singers);
+                        break;
                 }
                 tab.setText(text);
             }

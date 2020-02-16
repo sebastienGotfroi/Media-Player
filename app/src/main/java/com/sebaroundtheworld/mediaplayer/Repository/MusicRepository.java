@@ -79,6 +79,42 @@ public class MusicRepository {
 
     }
 
+    public List<Song> getSongByArtist(int artistId) {
+
+        String whereClause = MediaStore.Audio.Media.ARTIST_ID +" =?";
+        String[] args = {String.valueOf(artistId)};
+        Cursor musicCursor = contentResolver.query(externalSongUri, getSongColumns(), whereClause, args, null);
+
+        return  createSongListWithCursor(musicCursor);
+    }
+
+    public List<Pair<Integer, String>> getAllArtist() {
+        Uri artistUri = MediaStore.Audio.Artists.EXTERNAL_CONTENT_URI;
+
+        Cursor artistCursor = contentResolver.query(artistUri, getArtistColumns(), null, null, null);
+        return createArtistListWithCursor(artistCursor);
+
+    }
+
+    private List<Pair<Integer,String>> createArtistListWithCursor(Cursor artistCursor) {
+        List<Pair<Integer, String>> artistList = new ArrayList<>();
+        Integer id;
+        String artist;
+
+        if(artistCursor != null && artistCursor.getCount() > 0) {
+            artistCursor.moveToFirst();
+
+            do {
+                id = artistCursor.getInt(0);
+                artist = artistCursor.getString(1);
+                artistList.add(new Pair<Integer, String>(id, artist));
+            }while (artistCursor.moveToNext());
+
+            return artistList;
+        }
+        return null;
+    }
+
     private  List<Song> createSongListWithCursor(Cursor musicCursor) {
         List<Song> songList = new ArrayList<>();
 
@@ -106,6 +142,11 @@ public class MusicRepository {
 
     private String[] getGenreColumns() {
         String[] columns = {MediaStore.Audio.Genres._ID, MediaStore.Audio.Genres.NAME};
+        return columns;
+    }
+
+    private String[] getArtistColumns() {
+        String[] columns = {MediaStore.Audio.Artists._ID, MediaStore.Audio.Artists.ARTIST};
         return columns;
     }
 }
