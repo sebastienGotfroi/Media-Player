@@ -152,6 +152,10 @@ public  class MusicService extends Service implements   MediaPlayer.OnPreparedLi
         return mediaPlayer.getCurrentPosition();
     }
 
+    public int getCurrentSongPosition() {
+        return songPos;
+    }
+
     public void initMediaPlayer() {
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setWakeMode(getApplicationContext(), PowerManager.PARTIAL_WAKE_LOCK);

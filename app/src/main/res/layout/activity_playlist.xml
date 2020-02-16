@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent">
+<com.sothree.slidinguppanel.SlidingUpPanelLayout xmlns:sothree="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/sliding_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="bottom"
+    sothree:umanoPanelHeight="46dp"
+    sothree:umanoShadowHeight="4dp"
+    sothree:umanoDragView="@id/activity_playlist_player"
+    sothree:umanoScrollableView="@id/activity_playlist_container"
+    sothree:umanoInitialState="hidden">
 
     <FrameLayout
         android:id="@+id/activity_playlist_container"
@@ -9,4 +17,10 @@
         android:layout_height="match_parent">
     </FrameLayout>
 
-</LinearLayout>
+    <FrameLayout
+        android:id="@+id/activity_playlist_player"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    </FrameLayout>
+
+</com.sothree.slidinguppanel.SlidingUpPanelLayout>

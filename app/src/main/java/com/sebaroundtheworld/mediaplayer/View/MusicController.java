@@ -11,7 +11,7 @@ public class MusicController extends android.widget.MediaController {
     }
 
     public void hide () {
-        
+
     }
 
     public boolean dispatchKeyEvent (KeyEvent event) {
@@ -20,5 +20,9 @@ public class MusicController extends android.widget.MediaController {
         }
 
         return super.dispatchKeyEvent(event);
+    }
+
+    public void remove() {
+        super.hide();
     }
 }

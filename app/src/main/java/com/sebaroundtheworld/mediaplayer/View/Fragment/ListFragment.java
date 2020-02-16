@@ -45,6 +45,12 @@ public abstract class ListFragment extends Fragment {
         initWidget(view);
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        arrayAdapter.notifyDataSetChanged();
+    }
+
     protected List<String> returnListNameFromAPair (List<Pair<Integer,String>> listPair) {
         List<String> nameList = new ArrayList<>();
 

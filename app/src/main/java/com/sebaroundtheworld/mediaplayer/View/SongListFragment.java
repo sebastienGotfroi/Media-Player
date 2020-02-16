@@ -2,7 +2,6 @@ package com.sebaroundtheworld.mediaplayer.View;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,7 +17,6 @@ import com.sebaroundtheworld.mediaplayer.Model.Song;
 import com.sebaroundtheworld.mediaplayer.R;
 import com.sebaroundtheworld.mediaplayer.Repository.MusicRepository;
 import com.sebaroundtheworld.mediaplayer.Utils.Constants;
-import com.sebaroundtheworld.mediaplayer.View.Activity.PlayerActivity;
 
 import java.util.ArrayList;
 
@@ -29,6 +27,12 @@ public class SongListFragment extends Fragment {
 
     private ListView songListView;
     private ArrayAdapter<Song> songArrayAdapter;
+
+    private SongListListener songListListener;
+
+    public SongListFragment(SongListListener songListListener) {
+        this.songListListener = songListListener;
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -53,22 +57,17 @@ public class SongListFragment extends Fragment {
     public void onResume() {
         super.onResume();
         songArrayAdapter.notifyDataSetChanged();
-        Log.i("INFO","Je suis de retour");
     }
 
     private void initWidget(View view) {
         songListView = (ListView) view.findViewById(R.id.fragmentListSeachListView);
-        songArrayAdapter = new ArrayAdapter<>(getContext(), R.layout.support_simple_spinner_dropdown_item, listSong);
+        songArrayAdapter = new ArrayAdapter<Song>(getContext(), R.layout.support_simple_spinner_dropdown_item, listSong);
         songListView.setAdapter(songArrayAdapter);
 
         songListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Intent musicIntent = new Intent(getActivity(), PlayerActivity.class);
-                musicIntent.putParcelableArrayListExtra(Constants.INTENT_KEY_LIST_SONG, listSong);
-                musicIntent.putExtra(Constants.INTENT_KEY_INDEX_SONG, position);
-
-                startActivity(musicIntent);
+                songListListener.onItemSelected(position);
             }
         });
 
@@ -82,5 +81,9 @@ public class SongListFragment extends Fragment {
         } else {
             listSong = (ArrayList) musicRepository.getMusics();
         }
+    }
+
+    public interface SongListListener {
+        void onItemSelected(int position);
     }
 }

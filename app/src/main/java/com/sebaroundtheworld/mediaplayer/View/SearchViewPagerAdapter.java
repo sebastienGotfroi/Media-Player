@@ -21,7 +21,7 @@ public class SearchViewPagerAdapter extends FragmentStateAdapter {
 
         switch(position) {
             case 0:
-                return new SongListFragment();
+                //return new SongListFragment();
             case 1:
                 return new GenreListFragment();
             case 2:

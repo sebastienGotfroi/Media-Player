@@ -1,7 +1,7 @@
 package com.sebaroundtheworld.mediaplayer.View.Activity;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.fragment.app.Fragment;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -12,9 +12,11 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.MediaController;
 import android.widget.TextView;
 
@@ -31,7 +33,7 @@ import com.sebaroundtheworld.mediaplayer.Service.ShuffleService;
 import com.sebaroundtheworld.mediaplayer.Utils.Constants;
 import com.sebaroundtheworld.mediaplayer.View.MusicController;
 
-public class PlayerActivity extends AppCompatActivity implements MediaController.MediaPlayerControl, MusicServiceCallback {
+public class PlayerFragment extends Fragment implements MediaController.MediaPlayerControl, MusicServiceCallback {
 
     private MusicService musicService;
     private ShuffleService shuffleService;
@@ -48,6 +50,7 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
     private Intent playIntent;
     private boolean musicBound = false;
     private boolean isShuffle = false;
+    private boolean isPaused = false;
 
     private ServiceConnection musicConnection = new ServiceConnection(){
 
@@ -56,10 +59,9 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
             MusicService.MusicBinder binder = (MusicService.MusicBinder)service;
 
             musicService = binder.getService();
-            musicService.setMusicServiceCallback(PlayerActivity.this);
+            musicService.setMusicServiceCallback(PlayerFragment.this);
             musicService.setList(songList);
-            musicService.setSong(currentIndex);
-            start();
+
             musicBound = true;
         }
 
@@ -69,35 +71,60 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
         }
     };
 
+    @Override
+    public View onCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.activity_main, container, false);
+    }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onViewCreated(View view, Bundle savecInstanceState) {
+        singerTV = (TextView) view.findViewById(R.id.singerTV);
+        titleTV = (TextView) view.findViewById(R.id.titleTV);
+
+        if(musicController == null) {
+            setMusicController(view);
+        }
+
+        // Toolbar playerMenu = (Toolbar) findViewById(R.id.searchMenu);
+        // setSupportActionBar(playerMenu);
+    }
+
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
 
         shuffleService = new ShuffleService();
-        musicRepository = new MusicRepository(this);
+        musicRepository = new MusicRepository(getContext());
 
-        initWidgets();
-
-        songList = getIntent().getExtras().getParcelableArrayList(Constants.INTENT_KEY_LIST_SONG);
+        songList = getArguments().getParcelableArrayList(Constants.INTENT_KEY_LIST_SONG);
 
         currentList = new ArrayList<>();
         currentList.addAll(songList);
 
-        currentIndex = getIntent().getExtras().getInt(Constants.INTENT_KEY_INDEX_SONG);
+        currentIndex = getArguments().getInt(Constants.INTENT_KEY_INDEX_SONG);
     }
 
     @Override
-    protected void onStart() {
+    public void onStart() {
         super.onStart();
         if(playIntent==null){
-            playIntent = new Intent(this, MusicService.class);
-            bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
+            playIntent = new Intent(getContext(), MusicService.class);
+            getContext().bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
         }
     }
 
     @Override
+    public void onResume(){
+        super.onResume();
+        if (isPaused) {
+            currentIndex = musicService.getCurrentSongPosition();
+            fillMetadata();
+            isPaused = false;
+        }
+    }
+
+    /*@Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.player_menu, menu);
         return true;
@@ -127,20 +154,26 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
                 return true;
         }
         return super.onOptionsItemSelected(item);
+    }**/
+
+    @Override
+    public void onPause() {
+        isPaused = true;
+        super.onPause();
     }
 
      @Override
-     protected void onDestroy(){
-        unbindService(musicConnection);
+     public void onDestroy(){
+        getContext().unbindService(musicConnection);
         super.onDestroy();
      }
 
-    private void setMusicController() {
-        musicController = new MusicController(this);
+    private void setMusicController(View view) {
+        musicController = new MusicController(getContext());
 
         musicController.setMediaPlayer(this);
         musicController.setEnabled(true);
-        musicController.setAnchorView(findViewById(R.id.playerActivityControllerView));
+        musicController.setAnchorView(view.findViewById(R.id.playerActivityControllerView));
 
         musicController.setPrevNextListeners(new View.OnClickListener() {
             @Override
@@ -191,6 +224,12 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
 
         currentList.clear();
         currentList.addAll(songList);
+    }
+
+    public void setSongPos(int pos) {
+        if(pos < currentList.size()){
+            musicService.setSong(pos);
+        }
     }
 
     @Override
@@ -260,20 +299,12 @@ public class PlayerActivity extends AppCompatActivity implements MediaController
         titleTV.setText(currentList.get(currentIndex).getTitle());
     }
 
-    private void initWidgets() {
-        singerTV = (TextView) findViewById(R.id.singerTV);
-        titleTV = (TextView) findViewById(R.id.titleTV);
-
-        if(musicController == null) {
-            setMusicController();
-        }
-
-        Toolbar playerMenu = (Toolbar) findViewById(R.id.searchMenu);
-        setSupportActionBar(playerMenu);
-    }
-
     @Override
     public void showController() {
         musicController.show(0);
+    }
+
+    public void removeController() {
+        musicController.remove();
     }
 }

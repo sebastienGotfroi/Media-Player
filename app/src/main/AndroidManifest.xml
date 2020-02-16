@@ -16,7 +16,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.sebaroundtheworld.mediaplayer.View.Activity.PlayerActivity">
+        <activity android:name="com.sebaroundtheworld.mediaplayer.View.Activity.PlayerFragment">
             <intent-filter>
                 <category android:name="android.intent.category.APP_MUSIC" />
             </intent-filter>
