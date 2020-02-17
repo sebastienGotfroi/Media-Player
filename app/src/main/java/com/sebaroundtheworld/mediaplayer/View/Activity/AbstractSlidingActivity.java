@@ -17,14 +17,14 @@ public abstract class AbstractSlidingActivity extends FragmentActivity implement
     private MusicService musicService;
 
     private SlidingUpPanelLayout slidingUpPanelLayout;
-    private boolean panelIsCollapsed;
+    private boolean panelIsCollapsed = true;
     private boolean isPaused = false;
 
     @Override
     public void onResume() {
         super.onResume();
         if(isPaused) {
-            if(musicService != null && musicService.musicIsLoaded()) {
+            if(musicService != null && musicService.musicIsLoaded() && panelIsCollapsed) {
                 slidingUpPanelLayout.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
                 panelIsCollapsed = true;
             }
@@ -72,6 +72,7 @@ public abstract class AbstractSlidingActivity extends FragmentActivity implement
             public void onPanelStateChanged(View panel, SlidingUpPanelLayout.PanelState previousState, SlidingUpPanelLayout.PanelState newState) {
 
                 switch (newState) {
+                    case HIDDEN:
                     case COLLAPSED : getPlayerFragment().removeController();
                         panelIsCollapsed = true;
                         break;

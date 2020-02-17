@@ -6,10 +6,9 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.view.KeyEvent;
-import android.view.View;
+import android.widget.TextView;
 
-import androidx.fragment.app.FragmentActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import com.sebaroundtheworld.mediaplayer.Model.Song;
 import com.sebaroundtheworld.mediaplayer.R;
@@ -53,6 +52,8 @@ public class PlayListActivity extends AbstractSlidingActivity {
         setContentView(R.layout.activity_playlist);
 
         songList = getIntent().getExtras().getParcelableArrayList(Constants.INTENT_KEY_LIST_SONG);
+        String topBarTitle = getIntent().getExtras().getString(Constants.INTENT_KEY_TOPBAR_TITLE);
+        initTopBarTitle(topBarTitle);
         initWidget();
     }
 
@@ -73,6 +74,13 @@ public class PlayListActivity extends AbstractSlidingActivity {
     public void onDestroy() {
         unbindService(musicConnection);
         super.onDestroy();
+    }
+
+    private void initTopBarTitle(String topBarTitle) {
+        Toolbar toolbar = findViewById(R.id.activity_playlist_topbar);
+        TextView textView = toolbar.findViewById(R.id.activity_playlist_topbar_title);
+
+        textView.setText(topBarTitle);
     }
 
     private void initWidget() {

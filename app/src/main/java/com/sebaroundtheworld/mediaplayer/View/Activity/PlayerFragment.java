@@ -110,7 +110,7 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
     @Override
     public void onResume(){
         super.onResume();
-        if (isPaused) {
+        if (isPaused && musicService.musicIsLoaded()) {
             initPlayerIfMusicIsPlaying();
             musicService.setMusicServiceCallback(this);
             isPaused = false;

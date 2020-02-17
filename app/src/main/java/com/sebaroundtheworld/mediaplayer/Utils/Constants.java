@@ -8,4 +8,5 @@ public class Constants {
     public static final String INTENT_KEY_INDEX_SONG = "INTENT_KEY_INDEX_SONG";
     public static final String INTENT_KEY_MEDIA_PLAYER = "INTENT_KEY_MEDIA_PLAYER";
     public static final String INTENT_KEY_IS_PLAYING = "INTENT_KEY_IS_PLAYING";
+    public static final String INTENT_KEY_TOPBAR_TITLE = "INTENT_KEY_TOPBAR_TITLE";
 }

@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 
+import com.sebaroundtheworld.mediaplayer.R;
 import com.sebaroundtheworld.mediaplayer.Utils.Constants;
 import com.sebaroundtheworld.mediaplayer.View.Activity.PlayListActivity;
 
@@ -25,6 +26,7 @@ public class GenreListFragment extends ListFragment {
 
     protected void onItemSelected(View view, int position) {
         Intent musicIntent = new Intent(getActivity(), PlayListActivity.class);
+        musicIntent.putExtra(Constants.INTENT_KEY_TOPBAR_TITLE, listPair.get(position).second);
         musicIntent.putParcelableArrayListExtra(Constants.INTENT_KEY_LIST_SONG, (ArrayList) musicRepository.getSongByGenre(listPair.get(position).first));
         musicIntent.putExtra(Constants.INTENT_KEY_INDEX_SONG, 0);
 
