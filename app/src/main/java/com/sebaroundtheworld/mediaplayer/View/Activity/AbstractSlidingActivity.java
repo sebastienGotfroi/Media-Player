@@ -1,5 +1,6 @@
 package com.sebaroundtheworld.mediaplayer.View.Activity;
 
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 
@@ -44,6 +45,7 @@ public abstract class AbstractSlidingActivity extends FragmentActivity implement
             switch (keyCode) {
                 case KeyEvent.KEYCODE_BACK:
                     slidingUpPanelLayout.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
+                    getPlayerFragment().onCollapsing();
                     return true;
             }
         }
@@ -66,19 +68,21 @@ public abstract class AbstractSlidingActivity extends FragmentActivity implement
         slidingUpPanelLayout.addPanelSlideListener(new SlidingUpPanelLayout.PanelSlideListener() {
             @Override
             public void onPanelSlide(View panel, float slideOffset) {
+                Log.i("INFO", "SLIDE OFFSET " + slideOffset);
+
+                if(slideOffset > 0.75 && panelIsCollapsed) {
+                    getPlayerFragment().showController();
+                    panelIsCollapsed = false;
+                    getPlayerFragment().onExpanding();
+                } else if (slideOffset < 0.25 && !panelIsCollapsed) {
+                    getPlayerFragment().removeController();
+                    panelIsCollapsed = true;
+                    getPlayerFragment().onCollapsing();
+                }
             }
 
             @Override
             public void onPanelStateChanged(View panel, SlidingUpPanelLayout.PanelState previousState, SlidingUpPanelLayout.PanelState newState) {
-
-                switch (newState) {
-                    case HIDDEN:
-                    case COLLAPSED : getPlayerFragment().removeController();
-                        panelIsCollapsed = true;
-                        break;
-                    case EXPANDED: getPlayerFragment().showController();
-                        panelIsCollapsed = false;
-                }
             }
         });
     }

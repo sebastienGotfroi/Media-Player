@@ -6,4 +6,6 @@
     <string name="types">Genres</string>
     <string name="playlsit">Playlist</string>
     <string name="shuffle">Shuffle</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
 </resources>

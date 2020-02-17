@@ -2,10 +2,4 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <item
-        android:id="@+id/player_activity_shuffle"
-        android:title="@string/shuffle"
-        app:showAsAction="always"/>
-
-
 </menu>

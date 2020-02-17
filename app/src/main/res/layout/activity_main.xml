@@ -9,7 +9,7 @@
     tools:context="com.sebaroundtheworld.mediaplayer.View.Activity.PlayerFragment">
 
     <androidx.appcompat.widget.Toolbar
-        android:id="@+id/searchMenu"
+        android:id="@+id/fragment_player_toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="@color/green" />

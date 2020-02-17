@@ -1,5 +1,6 @@
 package com.sebaroundtheworld.mediaplayer.View.Activity;
 
+import androidx.appcompat.view.menu.MenuItemImpl;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 
@@ -7,13 +8,9 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.text.SpannableString;
-import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,7 +27,6 @@ import com.sebaroundtheworld.mediaplayer.Repository.MusicRepository;
 import com.sebaroundtheworld.mediaplayer.Service.MusicService;
 import com.sebaroundtheworld.mediaplayer.Service.MusicServiceCallback;
 import com.sebaroundtheworld.mediaplayer.Service.ShuffleService;
-import com.sebaroundtheworld.mediaplayer.Utils.Constants;
 import com.sebaroundtheworld.mediaplayer.View.MusicController;
 
 public class PlayerFragment extends Fragment implements MediaController.MediaPlayerControl, MusicServiceCallback {
@@ -39,9 +35,13 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
     private ShuffleService shuffleService;
     private MusicRepository musicRepository;
 
+    private Toolbar toolbar;
     private TextView singerTV;
     private TextView titleTV;
     private MusicController musicController;
+
+    private MenuItem playMenuItem;
+    private MenuItem pauseMenuItem;
 
     private List<Song> songList;
     private List<Song> currentList;
@@ -101,6 +101,24 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
     public void onViewCreated(View view, Bundle savecInstanceState) {
         singerTV = (TextView) view.findViewById(R.id.singerTV);
         titleTV = (TextView) view.findViewById(R.id.titleTV);
+        toolbar = (Toolbar) view.findViewById(R.id.fragment_player_toolbar);
+
+        toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+
+                if(item.getTitle() == getResources().getString(R.string.play)) {
+                    start();
+                    toolbar.getMenu().clear();
+                    toolbar.getMenu().add(getResources().getString(R.string.pause)).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+                } else {
+                    pause();
+                    toolbar.getMenu().clear();
+                    toolbar.getMenu().add(getResources().getString(R.string.play)).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+                }
+                return false;
+            }
+        });
 
         if(musicController == null) {
             setMusicController(view);
@@ -127,6 +145,22 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
      public void onDestroy(){
         getContext().unbindService(musicConnection);
         super.onDestroy();
+     }
+
+     public void onCollapsing() {
+        toolbar.inflateMenu(R.menu.player_menu);
+        toolbar.setTitle(currentList.get(currentIndex).getTitle());
+
+        if(musicService.isPlaying()) {
+            toolbar.getMenu().add(getResources().getString(R.string.pause)).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        } else {
+            toolbar.getMenu().add(getResources().getString(R.string.play)).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+        }
+     }
+
+     public void onExpanding() {
+        toolbar.getMenu().clear();
+        toolbar.setTitle("");
      }
 
      public void setSongList(List<Song> songList) {

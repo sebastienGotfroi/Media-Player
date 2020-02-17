@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="bottom"
-    sothree:umanoPanelHeight="46dp"
+    sothree:umanoPanelHeight="?attr/actionBarSize"
     sothree:umanoShadowHeight="4dp"
     sothree:umanoDragView="@id/activity_playlist_player"
     sothree:umanoScrollableView="@id/activity_playlist_container"
