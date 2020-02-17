@@ -26,7 +26,7 @@ public abstract class AbstractSlidingActivity extends FragmentActivity implement
         super.onResume();
         if(isPaused) {
             if(musicService != null && musicService.musicIsLoaded() && panelIsCollapsed) {
-                slidingUpPanelLayout.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
+                getPlayerFragment().onCollapsing();
                 panelIsCollapsed = true;
             }
             isPaused = false;
@@ -71,11 +71,9 @@ public abstract class AbstractSlidingActivity extends FragmentActivity implement
                 Log.i("INFO", "SLIDE OFFSET " + slideOffset);
 
                 if(slideOffset > 0.75 && panelIsCollapsed) {
-                    getPlayerFragment().showController();
                     panelIsCollapsed = false;
                     getPlayerFragment().onExpanding();
                 } else if (slideOffset < 0.25 && !panelIsCollapsed) {
-                    getPlayerFragment().removeController();
                     panelIsCollapsed = true;
                     getPlayerFragment().onCollapsing();
                 }

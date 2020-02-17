@@ -59,13 +59,12 @@ public  class MusicService extends Service implements   MediaPlayer.OnPreparedLi
     @Override
     public void onPrepared(MediaPlayer mp) {
         mp.start();
-        musicServiceCallback.showController();
+        musicServiceCallback.onSongChange(songPos);
     }
 
     @Override
     public void onCompletion(MediaPlayer mp) {
         next();
-        musicServiceCallback.onSongChange(songPos);
     }
 
     @Override
@@ -129,7 +128,7 @@ public  class MusicService extends Service implements   MediaPlayer.OnPreparedLi
 
         isPaused = false;
         playSong();
-        musicServiceCallback.onSongChange(songPos);
+
     }
 
     public void next() {
@@ -141,8 +140,6 @@ public  class MusicService extends Service implements   MediaPlayer.OnPreparedLi
             isPaused = false;
             playSong();
         }
-
-        musicServiceCallback.onSongChange(songPos);
     }
 
     public int getDuration() {

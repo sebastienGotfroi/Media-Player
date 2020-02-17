@@ -1,6 +1,5 @@
 package com.sebaroundtheworld.mediaplayer.View.Activity;
 
-import androidx.appcompat.view.menu.MenuItemImpl;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
 
@@ -9,12 +8,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.MediaController;
+import android.widget.ImageView;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.sebaroundtheworld.mediaplayer.Model.Song;
@@ -27,21 +27,26 @@ import com.sebaroundtheworld.mediaplayer.Repository.MusicRepository;
 import com.sebaroundtheworld.mediaplayer.Service.MusicService;
 import com.sebaroundtheworld.mediaplayer.Service.MusicServiceCallback;
 import com.sebaroundtheworld.mediaplayer.Service.ShuffleService;
-import com.sebaroundtheworld.mediaplayer.View.MusicController;
 
-public class PlayerFragment extends Fragment implements MediaController.MediaPlayerControl, MusicServiceCallback {
+public class PlayerFragment extends Fragment implements MusicServiceCallback {
 
     private MusicService musicService;
     private ShuffleService shuffleService;
     private MusicRepository musicRepository;
 
     private Toolbar toolbar;
+    private ImageView playButtonToolBar;
+    private ImageView pauseButtonToolBar;
     private TextView singerTV;
     private TextView titleTV;
-    private MusicController musicController;
-
-    private MenuItem playMenuItem;
-    private MenuItem pauseMenuItem;
+    private SeekBar seekBar;
+    private ImageView shuffleButton;
+    private ImageView shuffleActiveButton;
+    private ImageView prevButton;
+    private ImageView playButton;
+    private ImageView pauseButton;
+    private ImageView nextButton;
+    private ImageView repeatButton;
 
     private List<Song> songList;
     private List<Song> currentList;
@@ -65,6 +70,7 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
 
             if(musicService.musicIsLoaded()) {
                 initPlayerIfMusicIsPlaying();
+                onCollapsing();
             }
         }
 
@@ -94,35 +100,52 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
 
     @Override
     public View onCreateView (LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.activity_main, container, false);
+        return inflater.inflate(R.layout.fragment_player, container, false);
     }
 
     @Override
     public void onViewCreated(View view, Bundle savecInstanceState) {
         singerTV = (TextView) view.findViewById(R.id.singerTV);
         titleTV = (TextView) view.findViewById(R.id.titleTV);
-        toolbar = (Toolbar) view.findViewById(R.id.fragment_player_toolbar);
+        seekBar = (SeekBar) view.findViewById(R.id.fragment_player_duration);
 
-        toolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
-            public boolean onMenuItemClick(MenuItem item) {
-
-                if(item.getTitle() == getResources().getString(R.string.play)) {
-                    start();
-                    toolbar.getMenu().clear();
-                    toolbar.getMenu().add(getResources().getString(R.string.pause)).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-                } else {
-                    pause();
-                    toolbar.getMenu().clear();
-                    toolbar.getMenu().add(getResources().getString(R.string.play)).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if(fromUser) {
+                    seekTo(seekBar.getProgress());
                 }
-                return false;
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+        });
+        toolbar = (Toolbar) view.findViewById(R.id.fragment_player_toolbar);
+        playButtonToolBar = toolbar.findViewById(R.id.fragment_player_toolbar_play);
+        pauseButtonToolBar = toolbar.findViewById(R.id.fragment_player_toolbar_pause);
+
+        playButtonToolBar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                start();
+                swapPlayAndPauseButton(true, pauseButtonToolBar, playButtonToolBar);
             }
         });
 
-        if(musicController == null) {
-            setMusicController(view);
-        }
+        pauseButtonToolBar.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                pause();
+                swapPlayAndPauseButton(false, pauseButtonToolBar, playButtonToolBar);
+            }
+        });
+
+        initMusicControllerButton(view);
     }
 
     @Override
@@ -148,19 +171,20 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
      }
 
      public void onCollapsing() {
-        toolbar.inflateMenu(R.menu.player_menu);
-        toolbar.setTitle(currentList.get(currentIndex).getTitle());
-        toolbar.setSubtitle(currentList.get(currentIndex).getArtist());
+         toolbar.setTitle(currentList.get(currentIndex).getTitle());
+         toolbar.setSubtitle(currentList.get(currentIndex).getArtist());
 
         if(musicService.isPlaying()) {
-            toolbar.getMenu().add(getResources().getString(R.string.pause)).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+            pauseButtonToolBar.setVisibility(View.VISIBLE);
         } else {
-            toolbar.getMenu().add(getResources().getString(R.string.play)).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+            playButtonToolBar.setVisibility(View.VISIBLE);
         }
      }
 
      public void onExpanding() {
         toolbar.getMenu().clear();
+        pauseButtonToolBar.setVisibility(View.GONE);
+        playButtonToolBar.setVisibility(View.GONE);
         toolbar.setTitle("");
         toolbar.setSubtitle("");
      }
@@ -184,7 +208,7 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
         prioritySong = musicRepository.getRecentsSongs(20);
         currentList.removeAll(prioritySong);
 
-        currentList = shuffleService.shuffleWithPriority(prioritySong, currentList, 80);
+        currentList = shuffleService.shuffle(currentList);
 
         currentList.add(0, currentSong);
         currentIndex = 0;
@@ -207,83 +231,40 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
         }
     }
 
-    @Override
     public void start() {
         musicService.playSong();
+        swapPlayAndPauseButton(true, pauseButton, playButton);
         fillMetadata();
     }
 
-    @Override
     public void pause() {
         musicService.pause();
+        swapPlayAndPauseButton(false, pauseButton, playButton);
     }
 
-    @Override
-    public int getDuration() {
-        if (musicService != null) {
-            return musicService.getDuration();
-        }
-        return 0;
-    }
-
-    @Override
-    public int getCurrentPosition() {
-        if (musicService != null) {
-            return musicService.getCurrentPosition();
-        }
-        return 0;
-    }
-
-    @Override
     public void seekTo(int pos) {
         musicService.seekTo(pos);
     }
 
-    @Override
-    public boolean isPlaying() {
-        return musicService.isPlaying();
-    }
-
-    @Override
-    public int getBufferPercentage() {
-        return 0;
-    }
-
-    @Override
-    public boolean canPause() {
-        return true;
-    }
-
-    @Override
-    public boolean canSeekBackward() {
-        return true;
-    }
-
-    @Override
-    public boolean canSeekForward() {
-        return true;
-    }
-
-    @Override
-    public int getAudioSessionId() {
-        return 0;
-    }
-
-    @Override
-    public void showController() {
-        if(!isPaused) {
-            musicController.show(0);
+    public void previous() {
+        if(!musicService.isPlaying()) {
+            swapPlayAndPauseButton(true, pauseButton, playButton);
         }
+        musicService.prev();
+    }
+
+    public void next() {
+        if(!musicService.isPlaying()) {
+            swapPlayAndPauseButton(true, pauseButton, playButton);
+        }
+        musicService.next();
     }
 
     @Override
     public void onSongChange(int newPosition) {
         currentIndex = newPosition;
+        initSeekBar();
         fillMetadata();
-    }
-
-    public void removeController() {
-        musicController.remove();
     }
 
     private void initPlayerIfMusicIsPlaying() {
@@ -292,24 +273,93 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
         fillMetadata();
     }
 
-    private void setMusicController(View view) {
-        musicController = new MusicController(getContext());
+    private void initSeekBar() {
+        seekBar.setMax(musicService.getDuration());
 
-        musicController.setMediaPlayer(this);
-        musicController.setEnabled(true);
-        musicController.setAnchorView(view.findViewById(R.id.playerActivityControllerView));
+        final Handler handler = new Handler();
 
-        musicController.setPrevNextListeners(new View.OnClickListener() {
+        getActivity().runOnUiThread(new Runnable() {
+
             @Override
-            public void onClick(View v) {
-                musicService.next();
-            }
-        }, new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                musicService.prev();
+            public void run() {
+                if(musicService != null){
+                    seekBar.setProgress(musicService.getCurrentPosition());
+                }
+                handler.postDelayed(this, 500);
             }
         });
+    }
+
+    private void initMusicControllerButton(View view) {
+        shuffleButton = view.findViewById(R.id.fragment_player_shuffle);
+        shuffleButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                shuffle();
+                shuffleButton.setVisibility(View.GONE);
+                shuffleActiveButton.setVisibility(View.VISIBLE);
+            }
+        });
+
+        shuffleActiveButton = view.findViewById(R.id.fragment_player_green_shuffle);
+        shuffleActiveButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                deShuffle();
+                shuffleButton.setVisibility(View.VISIBLE);
+                shuffleActiveButton.setVisibility(View.GONE);
+            }
+        });
+
+        prevButton = view.findViewById(R.id.fragment_player_prev);
+        prevButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                previous();
+            }
+        });
+
+        playButton = view.findViewById(R.id.fragment_player_play);
+        playButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                start();
+            }
+        });
+
+        pauseButton = view.findViewById(R.id.fragment_player_pause);
+        pauseButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                pause();
+            }
+        });
+
+        nextButton = view.findViewById(R.id.fragment_player_next);
+        nextButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                next();
+            }
+        });
+
+        repeatButton = view.findViewById(R.id.fragment_player_repeat);
+        repeatButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+            }
+        });
+    }
+
+    private void swapPlayAndPauseButton(boolean isPlaying, ImageView pauseButton, ImageView playButton) {
+        if(isPlaying) {
+            pauseButton.setVisibility(View.VISIBLE);
+            playButton.setVisibility(View.GONE);
+        } else {
+            pauseButton.setVisibility(View.GONE);
+            playButton.setVisibility(View.VISIBLE);
+        }
     }
 
     private void fillMetadata() {
