@@ -150,6 +150,7 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
      public void onCollapsing() {
         toolbar.inflateMenu(R.menu.player_menu);
         toolbar.setTitle(currentList.get(currentIndex).getTitle());
+        toolbar.setSubtitle(currentList.get(currentIndex).getArtist());
 
         if(musicService.isPlaying()) {
             toolbar.getMenu().add(getResources().getString(R.string.pause)).setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
@@ -161,6 +162,7 @@ public class PlayerFragment extends Fragment implements MediaController.MediaPla
      public void onExpanding() {
         toolbar.getMenu().clear();
         toolbar.setTitle("");
+        toolbar.setSubtitle("");
      }
 
      public void setSongList(List<Song> songList) {
